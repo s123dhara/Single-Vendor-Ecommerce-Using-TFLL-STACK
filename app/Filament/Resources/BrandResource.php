@@ -2,17 +2,14 @@
 
 namespace App\Filament\Resources;
 
-
 use Illuminate\Support\Str;
-use App\Filament\Resources\CategoryResource\Pages;
-use App\Filament\Resources\CategoryResource\RelationManagers;
-use App\Models\Category;
-use Filament\Forms;
-use Filament\Forms\Components\FileUpload;
+use App\Filament\Resources\BrandResource\Pages;
+use App\Filament\Resources\BrandResource\RelationManagers;
+use App\Models\Brand;
 use Filament\Forms\Components\Grid;
-use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Form;
 use Filament\Forms\Set;
@@ -22,11 +19,11 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
-class CategoryResource extends Resource
+class BrandResource extends Resource
 {
-    protected static ?string $model = Category::class;
+    protected static ?string $model = Brand::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-tag';
+    protected static ?string $navigationIcon = 'heroicon-o-computer-desktop';
 
     public static function form(Form $form): Form
     {
@@ -47,7 +44,7 @@ class CategoryResource extends Resource
                             ->maxLength(255)
                             ->dehydrated() // Keep hydrated to ensure it's included in the submission
                             ->disabled() // Prevents user interaction but still allows programmatic setting
-                            ->unique(Category::class, 'slug', ignoreRecord: true),
+                            ->unique(Brand::class, 'slug', ignoreRecord: true),
 
                     ]),
 
@@ -63,6 +60,7 @@ class CategoryResource extends Resource
                 ])
             ]);
     }
+
 
     public static function table(Table $table): Table
     {
@@ -111,9 +109,9 @@ class CategoryResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListCategories::route('/'),
-            'create' => Pages\CreateCategory::route('/create'),
-            'edit' => Pages\EditCategory::route('/{record}/edit'),
+            'index' => Pages\ListBrands::route('/'),
+            'create' => Pages\CreateBrand::route('/create'),
+            'edit' => Pages\EditBrand::route('/{record}/edit'),
         ];
     }
 }
