@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-
+use Illuminate\Support\Str;
 class Product extends Model
 {
     use HasFactory;
@@ -14,7 +14,7 @@ class Product extends Model
         'is_featured', 'in_stock', 'on_sale' 
     ];
 
-    protected $cats = ['images' => 'array'];
+    protected $casts = ['images' => 'array'];
 
     
     public function category() {
@@ -27,5 +27,15 @@ class Product extends Model
 
     public function orderItems() {
         return $this->hasMany(OrderItem::class);
+    }
+
+    // this value comes from Category resourse Filament packages 
+    protected static function booted()
+    {
+        static::saving(function ($product) {
+            if (empty($product->slug)) {
+                $product->slug = Str::slug($product->name);
+            }
+        });
     }
 }

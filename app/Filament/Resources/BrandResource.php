@@ -1,19 +1,21 @@
 <?php
 
 namespace App\Filament\Resources;
-
 use Illuminate\Support\Str;
 use App\Filament\Resources\BrandResource\Pages;
 use App\Filament\Resources\BrandResource\RelationManagers;
 use App\Models\Brand;
-use Filament\Forms\Components\Grid;
+use Filament\Forms;
+use Filament\Forms\Form;
+use Filament\Resources\Resource;
+
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Toggle;
-use Filament\Forms\Form;
 use Filament\Forms\Set;
-use Filament\Resources\Resource;
+use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Grid;
+
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -23,7 +25,7 @@ class BrandResource extends Resource
 {
     protected static ?string $model = Brand::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-computer-desktop';
+    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
     public static function form(Form $form): Form
     {
@@ -50,7 +52,7 @@ class BrandResource extends Resource
 
                     FileUpload::make('image')
                         ->image()
-                        ->directory('categories'),
+                        ->directory('brands'),
 
                     Toggle::make('is_active')
                         ->required()
@@ -60,7 +62,6 @@ class BrandResource extends Resource
                 ])
             ]);
     }
-
 
     public static function table(Table $table): Table
     {
