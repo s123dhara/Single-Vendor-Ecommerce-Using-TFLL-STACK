@@ -4,22 +4,30 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\OrderResource\Pages;
 use App\Filament\Resources\OrderResource\RelationManagers;
+use App\Filament\Resources\OrderResource\RelationManagers\AddressRelationManager;
 use App\Models\Order;
 use App\Models\Product;
+use Faker\Core\Number;
 use Filament\Forms;
 use Filament\Forms\Components\Group;
+use Filament\Forms\Components\Hidden;
+use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Set;
+use Illuminate\Support\Facades\Log;
+// use Illuminate\Container\Attributes\Log;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\ToggleButtons;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
+use Filament\Support\Number\currency;
 use Filament\Resources\Resource;
 use Filament\Tables;
+use Filament\Tables\Columns\SelectColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
@@ -36,9 +44,9 @@ class OrderResource extends Resource
             ->schema([
                 Group::make()->schema([
                     Section::make('Order Informaiton')->schema([
-                        Select::make('user')
+                        Select::make('user_id')
                             ->label('Customer')
-                            ->relationship('user', 'name')
+                            ->relationship('user', 'name')  // Ensure it's linking the user relationship
                             ->searchable()
                             ->preload()
                             ->required(),
@@ -59,6 +67,7 @@ class OrderResource extends Resource
                                 'failed' => 'Failed',
                             ])
                             ->default('pending')
+                            ->dehydrated()
                             ->required(),
 
 
@@ -69,14 +78,14 @@ class OrderResource extends Resource
                                 'new' => 'new',
                                 'processing' => 'Processing',
                                 'shipped' => 'Shipped',
-                                'deliverd' => 'Delivered',
-                                'cancelled' => 'Cancelled',
+                                'delivered' => 'Delivered',
+                                'canceled' => 'Canceled',
                             ])
                             ->colors([
                                 'new' => 'info',
                                 'processing' => 'warning',
                                 'shipped' => 'info',
-                                'deliverd' => 'success',
+                                'delivered' => 'success',
                                 'cancelled' => 'danger',
                             ])
                             ->icons([
@@ -116,6 +125,7 @@ class OrderResource extends Resource
                             Repeater::make('items')
                                 ->relationship()
                                 ->schema([
+
                                     Select::make('product_id')
                                         ->relationship('product', 'name')
                                         ->searchable()
@@ -124,9 +134,15 @@ class OrderResource extends Resource
                                         ->distinct()
                                         ->disableOptionsWhenSelectedInSiblingRepeaterItems()
                                         ->reactive()
-                                        ->afterStateUpdated(fn($state, Set $set) => $set('unit_amount', Product::find($state)?->price ?? 0))
-                                        ->afterStateUpdated(fn($state, Set $set) => $set('total_amount', Product::find($state)?->price ?? 0))
-                                        ->columnSpan(3),
+                                        ->afterStateUpdated(function ($state, Set $set) {
+                                            Log::info('Product ID Selected:', ['product_id' => $state]); // Log the selected product_id
+                                            $product = Product::find($state);
+                                            $set('unit_amount', $product?->price ?? 0);
+                                            $set('total_amount', $product?->price ?? 0);
+                                        })
+                                        ->columnSpan(3)
+                                        ->dehydrated(true),
+
 
 
                                     TextInput::make('quantity')
@@ -155,7 +171,28 @@ class OrderResource extends Resource
                                         ->columnSpan(3),
 
 
-                                ])->columns(12)
+                                ])->columns(12),
+
+                            Placeholder::make('grand_total_placeholders')
+                                ->label('Grand Total')
+                                ->content(function (Get $get, Set $set) {
+                                    $total = 0;
+
+                                    if (!$repeaters = $get('items')) {
+                                        return '₹0.00'; // Default if no items are found
+                                    } else {
+                                        foreach ($repeaters as $key => $repeater) {
+                                            $total += $get("items.{$key}.total_amount");
+                                        }
+                                        $set('grand_total', $total);  // Set the 'grand_total' field explicitly
+                                        return '₹' . number_format($total, 2); // For INR with two decimal points
+                                    }
+                                }),
+
+                            Hidden::make('grand_total')
+                                ->default(0)  // Set default value
+                                ->dehydrated(true),  // Ensure the value is included when submitting the form
+
                         ])
 
                 ])->columnSpanFull()
@@ -166,30 +203,47 @@ class OrderResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('user_id')
-                    ->numeric()
+                Tables\Columns\TextColumn::make('user.name')
+                    ->label('Customer')
+                    ->searchable()
                     ->sortable(),
+
                 Tables\Columns\TextColumn::make('grand_total')
+                    ->label('Customer')
                     ->numeric()
                     ->sortable(),
+
                 Tables\Columns\TextColumn::make('payment_method')
-                    ->searchable(),
+                    ->searchable()
+                    ->sortable(),
+
                 Tables\Columns\TextColumn::make('payment_status')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('status')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('brand_id')
-                    ->numeric()
+                    ->searchable()
                     ->sortable(),
+
                 Tables\Columns\TextColumn::make('currency')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('shipping_amount')
-                    ->numeric()
+                    ->searchable()
                     ->sortable(),
+
                 Tables\Columns\TextColumn::make('shipping_method')
+                    ->sortable()
                     ->searchable(),
+
+                SelectColumn::make('status')
+                    ->options([
+                        'new' => 'new',
+                        'processing' => 'Processing',
+                        'shipped' => 'Shipped',
+                        'delivered' => 'Delivered',
+                        'canceled' => 'Canceled',
+                    ])
+                    ->searchable()
+                    ->sortable(),
+
                 Tables\Columns\TextColumn::make('notes')
-                    ->searchable(),
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
@@ -203,8 +257,11 @@ class OrderResource extends Resource
                 //
             ])
             ->actions([
-                Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\ActionGroup::make([
+                    Tables\Actions\EditAction::make(),
+                    Tables\Actions\ViewAction::make(),
+                    Tables\Actions\DeleteAction::make(),
+                ])
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -216,8 +273,16 @@ class OrderResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            AddressRelationManager::class
         ];
+    }
+
+    public static function getNavigationBadge() : ? String {
+        return static::getModel()::count();
+    }
+
+    public static function getNavigationBadgeColor() : String|Array|null {
+        return static::getModel()::count() > 10 ? 'success' : 'danger';
     }
 
     public static function getPages(): array

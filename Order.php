@@ -12,16 +12,23 @@ class Order extends Model
 
 
     protected $fillable = [
-        'user_id', 'grand_total', 'payment_method', 'payment_status', 'status', 'currency', 
+        'user_id', 'grand_total', 'payment_method', 'payement_status', 'status', 'currency', 'product_id', 
         'shipping_amount', 'shipping_method', 'notes'
     ];
 
-    // protected $casts = ['product_id' => 'array'];
+    protected $casts = ['product_id' => 'array'];
 
     public function user() {
         return $this->belongsTo(User::class);
     }
 
+    public function product() {
+        return $this->belongsTo(Product::class);
+    }
+
+    // public function product() {
+    //     return $this->hasMany(Product::class);
+    // }
     public function items() {
         return $this->hasMany(OrderItem::class);
     }

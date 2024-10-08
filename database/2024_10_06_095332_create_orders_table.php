@@ -18,7 +18,7 @@ return new class extends Migration
             $table->string('payment_method')->nullable();
             $table->string('payment_status')->nullable();
             $table->enum('status' , ['new', 'processing', 'shipped', 'delivered', 'canceled'])->default('new');
-            $table->foreignId('brand_id')->constrained('brands')->cascadeOnDelete();
+            $table->foreignId('product_id')->constrained('products')->cascadeOnDelete();
             $table->string('currency')->nullable();
             $table->decimal('shipping_amount')->nullable();
             $table->string('shipping_method')->nullable();
