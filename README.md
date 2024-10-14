@@ -43,3 +43,9 @@ Single Vendor Ecommerce Project is a fully functional ecommerce platform built u
 **Database** Sqlite
 
 
+## Important Update
+
+This Project is currently in Development phase.
+
+
+
